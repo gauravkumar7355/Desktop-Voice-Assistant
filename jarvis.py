@@ -14,6 +14,11 @@ import os
 import re
 import requests
 import PyPDF2
+import operator
+import pywhatkit as kit
+import smtplib
+import json
+import pyautogui
 
 
 #------------ Taking Voice Input ------------
@@ -22,7 +27,7 @@ voices = engine.getProperty('voices')
 
 
 #------------ Use voices[0] for male voice  &  voices[1] for female voice ------------
-engine.setProperty('voice', voices[0].id)
+engine.setProperty('voice', voices[1].id)
 
 
 #------------ Function for Assistant Speaking ----------
@@ -77,6 +82,29 @@ def pdf_reader():
     speak(text)
     
     
+def sendemail(to,content):
+    server=smtplib.SMTP("smtp.gmail.com", 587)
+    server.ehlo()
+    server.starttls()
+    server.login("thakurgauravgt.7355@gmail.com", "hpvtdakdahdhqtui")
+    server.sendmail("thakurgauravgt.7355@gmail.com", to, content)
+    server.close()
+
+
+def My_Location():
+    print("Checking........")
+    ip_add = requests.get('https://api.ipify.org').text
+    url = 'https://get.geojs.io/v1/ip/geo/' + ip_add + '.json'   
+    geo_q = requests.get(url)    
+    geo_d = geo_q.json()    
+    state = geo_d['city']    
+    country =geo_d['country']
+    speak(f"Sir, you are now in {state,country}.")
+    
+
+def screenshot():
+    img = pyautogui.screenshot()
+    img.save("E:\\Gaurav\\Projects\\Jarvis\\jarvis_ss\\js.png")
 
 if __name__ == "__main__":
     clear = lambda : os.system('cls')
@@ -126,20 +154,87 @@ if __name__ == "__main__":
         elif "read pdf" in query:
             pdf_reader()  
             
-        # --- Play Music fron local File
+        # --- Take ScreenShot ---
+        elif 'screenshot' in query:
+            speak("taking screenshot")
+            screenshot()
+            
+        # --- Find My Location ---
+        elif 'my location' in query:
+            My_Location()
+            
+        # --- Play Music fron local File ---
         elif 'play music' in query:
             music_dir = 'D:\\Music PlayList'
             songs = os.listdir(music_dir)
             print(songs)
             random = os.startfile(os.path.join(music_dir, songs[1]))
         
+        # --- Perform Mathematical Calculation ---
+        elif "do some calculation" in query or "can you calculate" in query:
+            r = sr.Recognizer()
+            with sr.Microphone() as source:
+                speak("Say what you want to calculate, example: 2 plus 2")
+                print("listening......")
+                r.adjust_for_ambient_noise(source)
+                audio = r.listen(source)
+            my_string = r.recognize_google(audio)
+            print(my_string)
+            def get_operator_fn(op):
+                return{
+                    '+' : operator.add, #plus
+                    '-' : operator.sub, #minus
+                    '*' : operator.mul, #multiplied by
+                    'divided' : operator.__truediv__, #divided
+                }[op]
+            def eval_binary_expr(op1, oper, op2): # 2 plus 2
+                op1,op2 = int(op1), int(op2)
+                return get_operator_fn(oper)(op1,op2)
+            speak("your result is")
+            speak(eval_binary_expr(*(my_string.split())))
+        
+        # --- send email ---
+        elif "send email" in query or "email" in query or "mail" in query:           
+            try:
+                speak("what should i say")
+                content = takeCommand()
+                to = (input("Enter the destination email id: "))
+                sendemail(to,content)
+                speak("Email has been sent sccessfully.")
+                
+            except Exception as e:
+                print(e)
+                speak("Email has not been sent due to some exception.")
+            
+        # --- send whatsApp Message ---
+        elif "send message" in query:
+            try:
+                speak(f"Please Enter the Phone Number")
+                num=(input("Enter the Phone Number: "))
+                r = sr.Recognizer()
+                with sr.Microphone() as source:
+                    speak("Say what you want to message, example: Hello! how are you ?")
+                    print("listening......")
+                    r.adjust_for_ambient_noise(source)
+                    audio = r.listen(source)
+                my_string = r.recognize_google(audio)
+                print(my_string)
+                speak(f"Please Enter the Time of message,")
+                hr=int(input("Enter the Hour Clock, example: 10 "))
+                min=int(input("Enter the min Clock, example: 48 "))
+                kit.sendwhatmsg(num,my_string,hr,min)
+            
+            except Exception as e:
+                print(e)
+                speak("Email has not been sent due to some exception.")
+             
         # --- Current Time ---
         elif 'the time' in query:
             strTime = datetime.datetime.now().strftime("%H:%M:%S")
             speak(f"sir, the time is {strTime}")
             
         # --- Exit from progrm ---
-        elif 'exit'in query:
+        elif 'exit'in query or 'thanks for your services' in query:
             speak("Thanks for giving me your time , have a nice day")
             exit()
             
