@@ -82,6 +82,7 @@ def pdf_reader():
     speak(text)
     
     
+#----------- Function to send mail -----------
 def sendemail(to,content):
     server=smtplib.SMTP("smtp.gmail.com", 587)
     server.ehlo()
@@ -91,6 +92,7 @@ def sendemail(to,content):
     server.close()
 
 
+#----------- Function to find my location -----------
 def My_Location():
     print("Checking........")
     ip_add = requests.get('https://api.ipify.org').text
@@ -102,10 +104,13 @@ def My_Location():
     speak(f"Sir, you are now in {state,country}.")
     
 
+#----------- Function to take ScreenShot -----------
 def screenshot():
     img = pyautogui.screenshot()
     img.save("E:\\Gaurav\\Projects\\Jarvis\\jarvis_ss\\js.png")
 
+    
+    
 if __name__ == "__main__":
     clear = lambda : os.system('cls')
     clear()
